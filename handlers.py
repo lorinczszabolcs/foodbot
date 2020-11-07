@@ -1,29 +1,9 @@
 from datetime import datetime
-import sys
-import logging
 
-from telegram import (
-    Poll,
-    ParseMode,
-    KeyboardButton,
-    KeyboardButtonPollType,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Update,
-)
-from telegram.ext import (
-    Updater,
-    MessageHandler,
-    Filters,
-    CallbackContext,
-    CommandHandler,
-    CallbackQueryHandler,
-)
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import CallbackContext
 
 import pandas as pd
-from enum import Enum
 
 
 class PandasDB:
@@ -164,10 +144,6 @@ def button_handler(update: Update, context: CallbackContext):
 
         db.loc[db.voting_id == update.effective_chat.id, "registration_closed"] = True
         PandasDB().write(db)
-
-        # # fmt: off
-        # import IPython ; IPython.embed()
-        # # fmt: on
 
         query.edit_message_text(
             "Thank you for joining, please look at your private chats with @foodvote_bot and send the start command."
