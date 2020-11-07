@@ -1,30 +1,14 @@
-import time
-import sys
 import logging
 
-from telegram import (
-    Poll,
-    ParseMode,
-    KeyboardButton,
-    KeyboardButtonPollType,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Update,
-)
 from telegram.ext import (
     Updater,
     CommandHandler,
     MessageHandler,
     Filters,
-    CallbackContext,
     CallbackQueryHandler,
-    InlineQueryHandler,
 )
 
-from handlers import start, unknown, button_answer, button, vote, echo, count_join
-import pandas as pd
+from handlers import start, unknown, vote, button_handler
 
 # tokens to interact with the bots
 # 1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo new_test_bot
@@ -47,7 +31,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("vote", vote))
-    dispatcher.add_handler(CallbackQueryHandler(count_join))
+    dispatcher.add_handler(CallbackQueryHandler(button_handler))
     unknown_handler = MessageHandler(Filters.command, unknown)
     dispatcher.add_handler(unknown_handler)
 
