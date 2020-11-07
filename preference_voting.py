@@ -78,20 +78,30 @@ def btm(votes,restaurants, max_iter = 100, tol = 10 ** -8,) :
 
 
 ### example call code to the sample
-#1st parameter - number of restaurants, 2nd parameter team members
+# allocating a sample
+#1st parameter - list of restaurants, 2nd parameter team members
 #allocations = alloc_team_sample(["BK","MD","KFC","HES"], 7)
+#allocations
 
+### The following example calls can be used for the voteaggreate and btm 
 # person order does not matter for this
 # example 1 - 4 restaurants
 #restaurant_name = ["BK","MD","KFC","HES"]
 #winners = [0, 2, 1, 1, 1, 0]
 #losers =  [2, 3, 0, 2, 3, 3]
 #restaurants = 4
+#v1 = voteaggregate(winners,losers,restaurant_name)
+#prefs = btm(v1,restaurant_name)
+#prefs
 
 # example 2 - 5 restaurants
 #restaurant_name = ["BK","MD","KFC","HES","SUB"]
 #winners = [2,2,4,1,1,4,0,1,2,4]
 #losers = [3,0,0,4,3,3,3,0,1,2]
 #restaurants = 5
+#v2 = voteaggregate(winners,losers,restaurant_name)
+#prefs = btm(v2,restaurant_name)
+#prefs
+
 
 
