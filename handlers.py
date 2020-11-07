@@ -40,7 +40,7 @@ def start(update: Update, context: CallbackContext):
 
     elif grouptype == "group" or grouptype == "supergroup":
         update.message.reply_text(
-            text="Hey guys, welcome to FoodVote! Type vote to get started.",
+            text="Hey guys, welcome to FoodVote! Type /vote to get started.",
         )
 
     else:
@@ -90,7 +90,7 @@ def vote(update: Update, context: CallbackContext):
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             update.message.reply_text(
-                "Voting session started, click the button below to join the party!\n\nPartecipants:"
+                "Voting session started, click the button below to join the party!\n\nParticipants:"
                 + "\n- @"
                 + update.effective_user.username,
                 reply_markup=reply_markup,
