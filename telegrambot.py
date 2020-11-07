@@ -25,7 +25,7 @@ from telegram.ext import (
 
 import logging
 
-updater = Updater(token='1479496566:AAHOsvWBa6OQOrV0nuORHuJQkYTEIz8peik', use_context=True)
+updater = Updater(token='1440330193:AAHmGIYnqllLUBVl97DVflG48D_EPW0zZPI', use_context=True)
 
 dispatcher = updater.dispatcher
 
@@ -42,7 +42,7 @@ dispatcher.add_handler(start_handler)
 def echo(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
-def button(update, context):
+def button(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [
             InlineKeyboardButton("Option 1", callback_data='1'),
