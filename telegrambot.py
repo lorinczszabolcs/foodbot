@@ -1,5 +1,6 @@
 import time
 import sys
+import logging
 
 from telegram import (
     Poll,
@@ -15,74 +16,40 @@ from telegram import (
 from telegram.ext import (
     Updater,
     CommandHandler,
-    PollAnswerHandler,
-    PollHandler,
     MessageHandler,
     Filters,
     CallbackContext,
     CallbackQueryHandler
 )
 
-import logging
+from handlers import (
+    start,
+    unknown,
+    button_answer,
+    button
+)
 
-updater = Updater(token='1479496566:AAHOsvWBa6OQOrV0nuORHuJQkYTEIz8peik', use_context=True)
+# tokens to interact with the bots
+# 1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo new_test_bot
+# 1440330193:AAHmGIYnqllLUBVl97DVflG48D_EPW0zZPI freefood_bot
+# 1479496566:AAHOsvWBa6OQOrV0nuORHuJQkYTEIz8peik freeefoood_bot
 
-dispatcher = updater.dispatcher
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+
+
+if __name__ == "__main__":
+    
+    # access the bot
+    updater = Updater(token='1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo', use_context=True)
+    dispatcher = updater.dispatcher
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
 
-def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    start_handler = CommandHandler('start', start)
+    dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('button', button))
+    dispatcher.add_handler(CallbackQueryHandler(button_answer))
+    unknown_handler = MessageHandler(Filters.command, unknown)
+    dispatcher.add_handler(unknown_handler)
 
-from telegram.ext import CommandHandler
-start_handler = CommandHandler('start', start)
-dispatcher.add_handler(start_handler)
-
-def echo(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
-
-def button(update, context):
-    keyboard = [
-        [
-            InlineKeyboardButton("Option 1", callback_data='1'),
-            InlineKeyboardButton("Option 2", callback_data='2'),
-        ]
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
-
-dispatcher.add_handler(CommandHandler('button', button))
-
-
-def button_answer(update: Update, context: CallbackContext) -> None:
-    
-    query = update.callback_query
-
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    query.answer()
-
-    keyboard = [
-        [
-            InlineKeyboardButton("Option 1", callback_data='1'),
-            InlineKeyboardButton("Option 2", callback_data='2'),
-        ]
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    context.bot.send_message(query.message.chat_id, 'Please choose:', reply_markup=reply_markup)
-
-
-dispatcher.add_handler(CallbackQueryHandler(button_answer))
-
-def unknown(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
-
-unknown_handler = MessageHandler(Filters.command, unknown)
-dispatcher.add_handler(unknown_handler)
-
-updater.start_polling()
+    updater.start_polling()
