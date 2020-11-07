@@ -6,10 +6,11 @@ import random as rd
 # Generating a set of votes #
 # matrix of 0's #
 # i,j dim = of candidate restaurants #
-#restn = 5  # number of candidate restaurants
-#teamn = 5  # teamn = number of team members
+
+
 # in this case number of candidate restaurants must at least equal nC2 number of team members #
 
+# This function takes the restaurant list and team numbers to generate a sample allocation scheme 
 def alloc_team_sample(restlist, teamnum) :
     # creating a list of all possible combinations and changing restaurant names into indexes
     restnum = range(len(restlist))
@@ -29,18 +30,17 @@ def alloc_team_sample(restlist, teamnum) :
 
     return(allocation_list)
 
-### go through allocations to create a table of preferences (just 1s and 0's)
+# create matrix based on above winners and losers arrays
+# the output is input for the btm method
+def voteaggregate(winners,losers,restaurant_name) :
+    votesmat = np.array([[0 for i in range(len(restaurant_name))] for j in range(len(restaurant_name))])
+    # populate matrix
+    for i in range(len(winners)) :
+        votesmat[winners[i]][losers[i]] = votesmat[winners[i]][losers[i]]+1
+    # returns the matrix for input into the BT algorithm
+    return(votesmat)
 
-#############################
-### Need voting code here ###
-#############################
-
-### Output like this #
-winners = [0, 2, 1, 1, 1, 0]
-losers =  [2, 3, 0, 2, 3, 3]
-
-### Bradley-Terry method function here ###
-
+# Bradley-Terry method - it doesn't have a sparse data adjustment method 
 def btm(votes,restaurants, max_iter = 100, tol = 10 ** -8,) :
 
     n=len(restaurants)
@@ -79,36 +79,19 @@ def btm(votes,restaurants, max_iter = 100, tol = 10 ** -8,) :
 
 ### example call code to the sample
 #1st parameter - number of restaurants, 2nd parameter team members
-allocations = alloc_team_sample(["BK","MD","KFC","HES"], 7)
+#allocations = alloc_team_sample(["BK","MD","KFC","HES"], 7)
 
 # person order does not matter for this
 # example 1 - 4 restaurants
-restaurant_name = ["BK","MD","KFC","HES"]
-winners = [0, 2, 1, 1, 1, 0]
-losers =  [2, 3, 0, 2, 3, 3]
-restaurants = 4
+#restaurant_name = ["BK","MD","KFC","HES"]
+#winners = [0, 2, 1, 1, 1, 0]
+#losers =  [2, 3, 0, 2, 3, 3]
+#restaurants = 4
+
 # example 2 - 5 restaurants
-restaurant_name = ["BK","MD","KFC","HES","SUB"]
-winners = [2,2,4,1,1,4,0,1,2,4]
-losers = [3,0,0,4,3,3,3,0,1,2]
-restaurants = 5
-
-# create matrix based on above winners and losers arrays for testing
-# part of second missing function
-def voteaggregate(winners,losers,restaurant_name) :
-    votesmat = np.array([[0 for i in range(len(restaurant_name))] for j in range(len(restaurant_name))])
-    # populate matrix
-    for i in range(len(winners)) :
-        votesmat[winners[i]][losers[i]] = votesmat[winners[i]][losers[i]]+1
-    # returns the matrix for input into the BT algorithm
-    return(votesmat)
-
-votesmat = voteaggregate(winners,losers,restaurant_name)
-
-print(votesmat)
-# Checking here
-votepref = btm(votesmat,restaurant_name)
-check = votepref[1].index(np.max(votepref[1]))
-prefrest = votepref[0][check]
+#restaurant_name = ["BK","MD","KFC","HES","SUB"]
+#winners = [2,2,4,1,1,4,0,1,2,4]
+#losers = [3,0,0,4,3,3,3,0,1,2]
+#restaurants = 5
 
 
