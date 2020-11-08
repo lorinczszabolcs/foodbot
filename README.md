@@ -3,6 +3,7 @@
 ### Submission for Junction Connected 2020 - Aito.ai challenge.
 
 [Link to working telegram bot.](https://t.me/foodvote_bot)
+
 [Link to introduction video.](https://www.youtube.com/watch?v=e8WGjevAiwI) 
 
 # Introduction
