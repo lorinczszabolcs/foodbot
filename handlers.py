@@ -1,9 +1,21 @@
+import os
+import random
 from datetime import datetime
+import json
+from typing import List, Dict
 
+import pandas as pd
+from aito import api as aito_api
+from aito.client import AitoClient
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
-import pandas as pd
+from preference_voting import alloc_team_sample
+
+AITO_INSTANCE_URL = "https://team1junction.aito.app"
+AITO_API_KEY = os.environ.get("AITO_API_KEY")
+
+client = AitoClient(AITO_INSTANCE_URL, AITO_API_KEY)
 
 
 class PandasDB:
@@ -12,6 +24,51 @@ class PandasDB:
 
     def write(self, dataframe: pd.DataFrame) -> None:
         dataframe.to_csv("database.csv", index=False, header=True)
+
+
+def request_random_users(num_users: int) -> List[Dict]:
+    query = {"from": "users", "select": ["userID"], "limit": 200}
+    res = aito_api.generic_query(client, query)
+    user_ids = res.json["hits"]
+    return random.sample(user_ids, num_users)
+
+
+def get_aito_recommendations(users: List[Dict[str, str]]) -> Dict:
+    recommendation_query = {
+        "from": "ratings",
+        "where": {"userID": {"$or": [*users]}},
+        "recommend": "placeID",
+        "goal": {"rating": 2},
+        "limit": 6,
+    }
+    res = aito_api.recommend(client, recommendation_query)
+    places = res.json["hits"]
+    for key, place in zip(range(len(places)), places):
+        place["id"] = key
+    return places
+
+
+def voting_process_start(user_list: List[str]) -> None:
+    # Matching of users to random users from DB
+    random_users = request_random_users(len(user_list))
+
+    # Getting recommendations based on users
+    recommendations = get_aito_recommendations(random_users)
+
+    # Allocations of rec choices
+    rec_ids = [rec["id"] for rec in recommendations]
+    allocations_ids = alloc_team_sample(rec_ids, len(random_users))
+
+    # Write to DB
+    hydrated_allocations = [
+        [(recommendations[pair[0]], recommendations[pair[1]]) for pair in allocation]
+        for allocation in allocations_ids
+    ]
+
+    for user, allocation_vec in zip(user_list, hydrated_allocations):
+        db = PandasDB().read()
+        db.loc[db.user_id == user, ["allocated_choices"]] = json.dumps(allocation_vec)
+        PandasDB().write(db)
 
 
 # Handlers
@@ -144,6 +201,8 @@ def button_handler(update: Update, context: CallbackContext):
 
         db.loc[db.voting_id == update.effective_chat.id, "registration_closed"] = True
         PandasDB().write(db)
+
+        voting_process_start(db.user_id.unique().tolist())
 
         query.edit_message_text(
             "Thank you for joining, please look at your private chats with @foodvote_bot and send the start command."
