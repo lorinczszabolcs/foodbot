@@ -4,17 +4,54 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 import pandas as pd
+import ast
+
+# ask preferences to the user
+def askpreference(update: Update, df: pd.DataFrame, choice_number: int):
+
+    # get data from dataset
+    choices = df[df.user_id == update.effective_user.id].allocated_choices.values[0]
+    choice = ast.literal_eval(choices)[choice_number]
+
+    # buttons with options
+    keyboard = [[
+        InlineKeyboardButton("FIRST CHOICE", callback_data="{\"choice\":" + choice_number + ", \"winner\":" + choice[0]['id'] +", \"loser\": "+ choice[1]['id'] +"}",
+        InlineKeyboardButton("SECOND CHOICE", callback_data="{\"choice\":" + choice_number + ", \"loser\":" + choice[1]['id'] +", \"winner\": "+ choice[0]['id'] +"}),
+    ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # set of answers
+    update.message.reply_text(
+        text="Hey, take a look at the following options! :D:"
+    )
+    update.message.reply_text(
+        text="FIRST CHOICE: \n\n"
+        + f"Name : {choice[0]['name']}\n"
+        + f"Cuisine : {choice[0]['cuisine']}\n"
+        + f"Address : {choice[0]['address']}\n"
+        + f"Url : {choice[0]['url']}\n"
+    )
+    update.message.reply_text(
+        text="SECOND CHOICE: \n\n"
+        + f"Name : {choice[1]['name']}\n"
+        + f"Cuisine : {choice[1]['cuisine']}\n"
+        + f"Address : {choice[1]['address']}\n"
+        + f"Url : {choice[1]['url']}\n",
+    )
+    update.message.reply_text(
+        "Which of the following restaurants would you prefer?",
+        reply_markup=reply_markup
+    )
 
 
 class PandasDB:
-    def read(self, path="database.csv") -> pd.DataFrame:
-        return pd.read_csv("database.csv")
+    def read(self, path="database_snapshot.csv") -> pd.DataFrame:
+        return pd.read_csv("database_snapshot.csv")
 
     def write(self, dataframe: pd.DataFrame) -> None:
-        dataframe.to_csv("database.csv", index=False, header=True)
+        dataframe.to_csv("database_snapshot.csv", index=False, header=True)
 
 
-# Handlers
 def start(update: Update, context: CallbackContext):
 
     df = PandasDB().read()
@@ -23,10 +60,10 @@ def start(update: Update, context: CallbackContext):
     if grouptype == "private":
 
         if update.effective_user.id in df.user_id.values.tolist():
-            if df[df.user_id == update.effective_user.id]["registration_closed"].any():
-                update.message.reply_text(
-                    text="You are taking part of a voting! :D Here, these are your choices:",
-                )
+            if df[df.user_id == update.effective_user.id]["registration_closed"].any(): 
+
+                askpreference(update, df, 0)
+
             else:
                 update.message.reply_text(
                     text="The registrations for your voting is not closed yet! "
@@ -70,6 +107,8 @@ def vote(update: Update, context: CallbackContext):
                             "voting_id": voting_id,
                             "user_id": user_id,
                             "registration_closed": registration_closed,
+                            "allocated_choices": " ",
+                            "answers": "[[],[]]"
                         },
                         index=[0],
                     ),
@@ -128,6 +167,8 @@ def button_handler(update: Update, context: CallbackContext):
                             "voting_id": voting_id,
                             "user_id": user_id,
                             "registration_closed": registration_closed,
+                            "allocated_choices": " ",
+                            "answers": "[[],[]]"
                         },
                         index=[0],
                     ),
@@ -146,8 +187,25 @@ def button_handler(update: Update, context: CallbackContext):
         PandasDB().write(db)
 
         query.edit_message_text(
-            "Thank you for joining, please look at your private chats with @foodvote_bot and send the start command."
+            "Thank you for joining, please look at your private chats with @foodvote_bot and send the /start command."
         )
+    
+    elif "choice" in query.data :
+
+        previous_choice = ast.literal_eval(query.data)
+
+        # save answers in the dataset
+        answers = db[db.answers == update.effective_user.id]['answers']
+        answers = answers.values.tolist()
+        if len(answer):
+            pass
+        else:
+            answers = [[previous],[]]
+
+        # fmt: off
+        import IPython ; IPython.embed()
+        # fmt: on
+
 
 
 def unknown(update: Update, context: CallbackContext):
