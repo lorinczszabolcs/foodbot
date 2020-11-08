@@ -12,6 +12,8 @@ from telegram.ext import CallbackContext
 
 from preference_voting import alloc_team_sample
 
+import pandas as pd
+
 AITO_INSTANCE_URL = "https://team1junction.aito.app"
 AITO_API_KEY = os.environ.get("AITO_API_KEY")
 
@@ -19,11 +21,67 @@ client = AitoClient(AITO_INSTANCE_URL, AITO_API_KEY)
 
 
 class PandasDB:
-    def read(self, path="database.csv") -> pd.DataFrame:
-        return pd.read_csv("database.csv")
+    def read(self, path="database_snapshot.csv") -> pd.DataFrame:
+        return pd.read_csv("database_snapshot.csv")
 
     def write(self, dataframe: pd.DataFrame) -> None:
-        dataframe.to_csv("database.csv", index=False, header=True)
+        dataframe.to_csv("database_snapshot.csv", index=False, header=True)
+
+
+# ask preferences to the user
+def askpreference(update: Update, df: pd.DataFrame, choice_number: int):
+
+    # get data from dataset
+    choices = df[df.user_id == update.effective_user.id].allocated_choices.values[0]
+    choice = json.loads(choices)[choice_number]
+
+    # buttons with options
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "FIRST CHOICE",
+                callback_data=json.dumps(
+                    {
+                        "choice": choice_number,
+                        "winner": choice[0].id,
+                        "loser": choice[1].id,
+                    }
+                ),
+            ),
+            InlineKeyboardButton(
+                "SECOND CHOICE",
+                ccallback_data=json.dumps(
+                    {
+                        "choice": choice_number,
+                        "winner": choice[1].id,
+                        "loser": choice[0].id,
+                    }
+                ),
+            ),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # set of answers
+    update.message.reply_text(text="Hey, take a look at the following options! :D:")
+    update.message.reply_text(
+        text="FIRST CHOICE: \n\n"
+        + f"Name : {choice[0]['name']}\n"
+        + f"Cuisine : {choice[0]['cuisine']}\n"
+        + f"Address : {choice[0]['address']}\n"
+        + f"Url : {choice[0]['url']}\n"
+    )
+    update.message.reply_text(
+        text="SECOND CHOICE: \n\n"
+        + f"Name : {choice[1]['name']}\n"
+        + f"Cuisine : {choice[1]['cuisine']}\n"
+        + f"Address : {choice[1]['address']}\n"
+        + f"Url : {choice[1]['url']}\n",
+    )
+    update.message.reply_text(
+        "Which of the following restaurants would you prefer?",
+        reply_markup=reply_markup,
+    )
 
 
 def request_random_users(num_users: int) -> List[Dict]:
@@ -81,9 +139,9 @@ def start(update: Update, context: CallbackContext):
 
         if update.effective_user.id in df.user_id.values.tolist():
             if df[df.user_id == update.effective_user.id]["registration_closed"].any():
-                update.message.reply_text(
-                    text="You are taking part of a voting! :D Here, these are your choices:",
-                )
+
+                askpreference(update, df, 0)
+
             else:
                 update.message.reply_text(
                     text="The registrations for your voting is not closed yet! "
@@ -97,7 +155,7 @@ def start(update: Update, context: CallbackContext):
 
     elif grouptype == "group" or grouptype == "supergroup":
         update.message.reply_text(
-            text="Hey guys, welcome to FoodVote! Type vote to get started.",
+            text="Hey guys, welcome to FoodVote! Type /vote to get started.",
         )
 
     else:
@@ -127,6 +185,8 @@ def vote(update: Update, context: CallbackContext):
                             "voting_id": voting_id,
                             "user_id": user_id,
                             "registration_closed": registration_closed,
+                            "allocated_choices": " ",
+                            "answers": "",
                         },
                         index=[0],
                     ),
@@ -147,7 +207,7 @@ def vote(update: Update, context: CallbackContext):
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             update.message.reply_text(
-                "Voting session started, click the button below to join the party!\n\nPartecipants:"
+                "Voting session started, click the button below to join the party!\n\nParticipants:"
                 + "\n- @"
                 + update.effective_user.username,
                 reply_markup=reply_markup,
@@ -185,6 +245,8 @@ def button_handler(update: Update, context: CallbackContext):
                             "voting_id": voting_id,
                             "user_id": user_id,
                             "registration_closed": registration_closed,
+                            "allocated_choices": " ",
+                            "answers": "[[],[]]",
                         },
                         index=[0],
                     ),
@@ -205,8 +267,25 @@ def button_handler(update: Update, context: CallbackContext):
         voting_process_start(db.user_id.unique().tolist())
 
         query.edit_message_text(
-            "Thank you for joining, please look at your private chats with @foodvote_bot and send the start command."
+            "Thank you for joining, please look at your private chats with @foodvote_bot and send the /start command."
         )
+
+    elif "choice" in query.data:
+
+        previous_choice = json.loads(query.data)
+
+        # save answers in the dataset
+        answers = db[db.answers == update.effective_user.id]["answers"]
+        answers = answers.values.tolist()
+
+        if len(answer):
+            pass
+        else:
+            answers = [[previous], []]
+
+        # fmt: off
+        import IPython ; IPython.embed()
+        # fmt: on
 
 
 def unknown(update: Update, context: CallbackContext):

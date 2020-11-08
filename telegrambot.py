@@ -11,7 +11,7 @@ from telegram.ext import (
 from handlers import start, unknown, vote, button_handler
 
 # tokens to interact with the bots
-# 1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo new_test_bot
+# 1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo MattiaDoesStuff_bot
 # 1440330193:AAHmGIYnqllLUBVl97DVflG48D_EPW0zZPI freefood_bot
 # 1479496566:AAHOsvWBa6OQOrV0nuORHuJQkYTEIz8peik freeefoood_bot
 # 1476500295:AAG83jTZTGzZz13M2zHfseIhXUg74cj_ApU foodvote_bot
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # access the bot
     updater = Updater(
-        token="1476500295:AAG83jTZTGzZz13M2zHfseIhXUg74cj_ApU", use_context=True
+        token="1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo", use_context=True
     )
     dispatcher = updater.dispatcher
     logging.basicConfig(
