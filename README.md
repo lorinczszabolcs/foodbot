@@ -2,6 +2,8 @@
 ## Making choosing a place to eat, fun and interactive ⚡⚡⚡
 ### Submission for Junction Connected 2020 - Aito.ai challenge.
 
+[Link to introduction video.](https://www.youtube.com/watch?v=e8WGjevAiwI) 
+
 # Introduction
 The main idea behind our project is to provide the recommendation power of Aito in a quick, interactive, clear and accessible format to teams who wish to have a fun and easy way of deciding about where to eat next time. Let us talk you through the main steps of how our idea would work in practice:
 
