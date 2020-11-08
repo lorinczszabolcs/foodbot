@@ -5,7 +5,7 @@
 [Link to introduction video.](https://www.youtube.com/watch?v=e8WGjevAiwI) 
 
 # Introduction
-The main idea behind our project is to provide the recommendation power of Aito in a quick, interactive, clear and accessible format to teams who wish to have a fun and easy way of deciding about where to eat next time. Let us talk you through the main steps of how our idea would work in practice:
+The main idea behind our project is to provide the recommendation power of [Aito.ai](https://aito.ai/) in a quick, interactive, clear and accessible format to teams who wish to have a fun and easy way of deciding about where to eat next time. Let us talk you through the main steps of how our idea would work in practice:
 
 
 # How it works?
@@ -17,12 +17,12 @@ The main idea behind our project is to provide the recommendation power of Aito 
 
 
 # Technicalities
-- Own dataset of restaurants constructed using MyHelsinki OpenAPI.
-- Aito API provides set of recommended restaurants for a group of people, and is accessed through the Aito Python SDK.
+- Own dataset of restaurants constructed using [MyHelsinki OpenAPI](http://open-api.myhelsinki.fi/).
+- Aito API provides set of recommended restaurants for a group of people, and is accessed through the [Aito Python SDK](https://aito-python-sdk.readthedocs.io/en/latest/).
 - The set of recommended restaurants is then passed through a pairwise ranking system via the telegram bot. The ranking system is based on the Bradley-Terry algorithm, to be precise.
--  Our telegram bot is powered by a Python interface to the Telegram Bot API.
+-  Our telegram bot is powered by a [Python interface](https://github.com/python-telegram-bot/python-telegram-bot) to the [Telegram Bot API](https://core.telegram.org/bots/api).
 
 
 # Outlook 
 
-- The same aproach can be used to integrate Aito with slack, a popular chat application used in offices, and work teams, where such a service would be highly required.
+- The same aproach can be used to integrate Aito with [slack](https://slack.com/intl/en-fi/), a popular chat application used in offices, and work teams, where such a service would be highly required.
