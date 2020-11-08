@@ -8,7 +8,7 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 
-from handlers import start, unknown, vote, button_handler
+from handlers import start, vote, results, button_handler, unknown
 
 # tokens to interact with the bots
 # 1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo MattiaDoesStuff_bot
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # access the bot
     updater = Updater(
-        token="1405956615:AAGPs1Ta65Y1W8GBWlOKkzFeQejGsCviBXo", use_context=True
+        token="1476500295:AAG83jTZTGzZz13M2zHfseIhXUg74cj_ApU", use_context=True
     )
     dispatcher = updater.dispatcher
     logging.basicConfig(
@@ -31,6 +31,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("vote", vote))
+    dispatcher.add_handler(CommandHandler("results", results))
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
     unknown_handler = MessageHandler(Filters.command, unknown)
     dispatcher.add_handler(unknown_handler)

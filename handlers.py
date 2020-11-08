@@ -1,6 +1,7 @@
 import os
 import random
 from datetime import datetime
+import numpy as np
 import json
 from typing import List, Dict
 
@@ -10,9 +11,8 @@ from aito.client import AitoClient
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
-from preference_voting import alloc_team_sample
+from preference_voting import alloc_team_sample, voteaggregate, btm
 
-import pandas as pd
 
 AITO_INSTANCE_URL = "https://team1junction.aito.app"
 AITO_API_KEY = os.environ.get("AITO_API_KEY")
@@ -21,67 +21,11 @@ client = AitoClient(AITO_INSTANCE_URL, AITO_API_KEY)
 
 
 class PandasDB:
-    def read(self, path="database_snapshot.csv") -> pd.DataFrame:
-        return pd.read_csv("database_snapshot.csv")
+    def read(self, path="database.csv") -> pd.DataFrame:
+        return pd.read_csv("database.csv")
 
     def write(self, dataframe: pd.DataFrame) -> None:
-        dataframe.to_csv("database_snapshot.csv", index=False, header=True)
-
-
-# ask preferences to the user
-def askpreference(update: Update, df: pd.DataFrame, choice_number: int):
-
-    # get data from dataset
-    choices = df[df.user_id == update.effective_user.id].allocated_choices.values[0]
-    choice = json.loads(choices)[choice_number]
-
-    # buttons with options
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "FIRST CHOICE",
-                callback_data=json.dumps(
-                    {
-                        "choice": choice_number,
-                        "winner": choice[0].id,
-                        "loser": choice[1].id,
-                    }
-                ),
-            ),
-            InlineKeyboardButton(
-                "SECOND CHOICE",
-                ccallback_data=json.dumps(
-                    {
-                        "choice": choice_number,
-                        "winner": choice[1].id,
-                        "loser": choice[0].id,
-                    }
-                ),
-            ),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # set of answers
-    update.message.reply_text(text="Hey, take a look at the following options! :D:")
-    update.message.reply_text(
-        text="FIRST CHOICE: \n\n"
-        + f"Name : {choice[0]['name']}\n"
-        + f"Cuisine : {choice[0]['cuisine']}\n"
-        + f"Address : {choice[0]['address']}\n"
-        + f"Url : {choice[0]['url']}\n"
-    )
-    update.message.reply_text(
-        text="SECOND CHOICE: \n\n"
-        + f"Name : {choice[1]['name']}\n"
-        + f"Cuisine : {choice[1]['cuisine']}\n"
-        + f"Address : {choice[1]['address']}\n"
-        + f"Url : {choice[1]['url']}\n",
-    )
-    update.message.reply_text(
-        "Which of the following restaurants would you prefer?",
-        reply_markup=reply_markup,
-    )
+        dataframe.to_csv("database.csv", index=False, header=True)
 
 
 def request_random_users(num_users: int) -> List[Dict]:
@@ -119,7 +63,7 @@ def voting_process_start(user_list: List[str]) -> None:
 
     # Write to DB
     hydrated_allocations = [
-        [(recommendations[pair[0]], recommendations[pair[1]]) for pair in allocation]
+        [[recommendations[pair[0]], recommendations[pair[1]]] for pair in allocation]
         for allocation in allocations_ids
     ]
 
@@ -140,7 +84,63 @@ def start(update: Update, context: CallbackContext):
         if update.effective_user.id in df.user_id.values.tolist():
             if df[df.user_id == update.effective_user.id]["registration_closed"].any():
 
-                askpreference(update, df, 0)
+                # get data from dataset
+                choices = json.loads(
+                    df[df.user_id == update.effective_user.id].allocated_choices.values[
+                        0
+                    ]
+                )
+                choice = choices[0]
+
+                # buttons with options
+                keyboard = [
+                    [
+                        InlineKeyboardButton(
+                            "FIRST CHOICE",
+                            callback_data=json.dumps(
+                                {
+                                    "choice": 0,
+                                    "winner": choice[0]["id"],
+                                    "loser": choice[1]["id"],
+                                }
+                            ),
+                        ),
+                        InlineKeyboardButton(
+                            "SECOND CHOICE",
+                            callback_data=json.dumps(
+                                {
+                                    "choice": 0,
+                                    "winner": choice[1]["id"],
+                                    "loser": choice[0]["id"],
+                                }
+                            ),
+                        ),
+                    ]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+
+                # set of answers
+                update.message.reply_text(
+                    text=f"Hey, take a look at the following options! 1/{len(choices)}"
+                )
+                update.message.reply_text(
+                    text="FIRST CHOICE: \n\n"
+                    + f"Name : {choice[0]['name']}\n"
+                    + f"Cuisine : {choice[0]['cuisine']}\n"
+                    + f"Address : {choice[0]['address']}\n"
+                    + f"Url : {choice[0]['url']}\n"
+                )
+                update.message.reply_text(
+                    text="SECOND CHOICE: \n\n"
+                    + f"Name : {choice[1]['name']}\n"
+                    + f"Cuisine : {choice[1]['cuisine']}\n"
+                    + f"Address : {choice[1]['address']}\n"
+                    + f"Url : {choice[1]['url']}\n",
+                )
+                update.message.reply_text(
+                    "Which of the following restaurants would you prefer?",
+                    reply_markup=reply_markup,
+                )
 
             else:
                 update.message.reply_text(
@@ -187,6 +187,8 @@ def vote(update: Update, context: CallbackContext):
                             "registration_closed": registration_closed,
                             "allocated_choices": " ",
                             "answers": "",
+                            "finished_answers": False,
+                            "tg_username": update.effective_user.username,
                         },
                         index=[0],
                     ),
@@ -224,6 +226,75 @@ def vote(update: Update, context: CallbackContext):
         )
 
 
+def results(update: Update, context: CallbackContext):
+    grouptype = update.effective_chat.type
+
+    if grouptype == "private":
+        update.message.reply_text(
+            "Not so fast! This command is only available in groups."
+        )
+    else:
+        db = PandasDB().read()
+        check_complete = db[db["voting_id"] == update.effective_chat.id][
+            "finished_answers"
+        ].all()
+
+        if check_complete:
+            # Must do algorithm
+            vectors = db[db["voting_id"] == update.effective_chat.id][
+                "answers"
+            ].tolist()
+
+            winners = []
+            losers = []
+            for mat in [json.loads(vec) for vec in vectors]:
+                winners += mat[0]
+                losers += mat[1]
+
+            restaurant_name = np.unique(winners + losers).tolist()
+            votes_matrix = voteaggregate(winners, losers, restaurant_name)
+            pref_matrix = btm(votes_matrix, restaurant_name)
+
+            index_best = pref_matrix[0][pref_matrix[1].index(np.max(pref_matrix[1]))]
+
+            all_choices: List[Dict] = sum(
+                [json.loads(vec) for vec in db["allocated_choices"].tolist()], []
+            )
+
+            best_choice: Dict = {}
+            found = False
+            i = 0
+            while not found and i < len(all_choices):
+                for current_choice in all_choices[i]:
+                    if current_choice["id"] == index_best:
+                        best_choice = current_choice
+                        found = True
+                    else:
+                        i += 1
+
+            update.message.reply_text(
+                text="This is the outcome of the vote (counting all the choices, not like Nevada): \n\n"
+                + f"Name : {best_choice['name']}\n"
+                + f"Cuisine : {best_choice['cuisine']}\n"
+                + f"Address : {best_choice['address']}\n"
+                + f"Url : {best_choice['url']}\n"
+            )
+            update.message.reply_text(
+                text="Thank you for using FoodVote! Hope to see you soon :)"
+            )
+            db = db[db["voting_id"] != update.effective_chat.id]
+            PandasDB().write(db)
+
+        else:
+            who_is_late = db[
+                ~(db[db["voting_id"] == update.effective_chat.id]["finished_answers"])
+            ]["tg_username"].tolist()
+            update.message.reply_text(
+                "Can't calculate the results yet! >:(\n\nThese people are still missing:\n"
+                + "".join([f"@{name}\n" for name in who_is_late])
+            )
+
+
 def button_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
@@ -246,7 +317,9 @@ def button_handler(update: Update, context: CallbackContext):
                             "user_id": user_id,
                             "registration_closed": registration_closed,
                             "allocated_choices": " ",
-                            "answers": "[[],[]]",
+                            "answers": "",
+                            "finished_answers": False,
+                            "tg_username": update.effective_user.username,
                         },
                         index=[0],
                     ),
@@ -274,18 +347,98 @@ def button_handler(update: Update, context: CallbackContext):
 
         previous_choice = json.loads(query.data)
 
-        # save answers in the dataset
-        answers = db[db.answers == update.effective_user.id]["answers"]
-        answers = answers.values.tolist()
+        future_choice = previous_choice["choice"]
+        choices_number = len(
+            json.loads(
+                db[db.user_id == update.effective_user.id]["allocated_choices"].iloc[0]
+            )
+        )
+        if future_choice < choices_number - 1:
+            # save answers in the dataset
+            answers = db[db.user_id == update.effective_user.id]["answers"].dropna()
+            answers = answers.values.tolist()
 
-        if len(answer):
-            pass
+            if len(answers) > 0:
+                answers = json.loads(answers[0])
+                answers[0] += [previous_choice["winner"]]
+                answers[1] += [previous_choice["loser"]]
+            else:
+                answers = [[previous_choice["winner"]], [previous_choice["loser"]]]
+
+            db.loc[db.user_id == update.effective_user.id, ["answers"]] = json.dumps(
+                answers
+            )
+            PandasDB().write(db)
+
+            future_choice += 1
+
+            # get data from dataset
+            choices = db[
+                db.user_id == update.effective_user.id
+            ].allocated_choices.values[0]
+            choice = json.loads(choices)[future_choice]
+
+            # buttons with options
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        "FIRST CHOICE",
+                        callback_data=json.dumps(
+                            {
+                                "choice": future_choice,
+                                "winner": choice[0]["id"],
+                                "loser": choice[1]["id"],
+                            }
+                        ),
+                    ),
+                    InlineKeyboardButton(
+                        "SECOND CHOICE",
+                        callback_data=json.dumps(
+                            {
+                                "choice": future_choice,
+                                "winner": choice[1]["id"],
+                                "loser": choice[0]["id"],
+                            }
+                        ),
+                    ),
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            # set of answers
+            context.bot.sendMessage(
+                query.message.chat_id,
+                text=f"Hey, take a look at the following options! {future_choice+1}/{choices_number}",
+            )
+            context.bot.sendMessage(
+                query.message.chat_id,
+                text="FIRST CHOICE: \n\n"
+                + f"Name : {choice[0]['name']}\n"
+                + f"Cuisine : {choice[0]['cuisine']}\n"
+                + f"Address : {choice[0]['address']}\n"
+                + f"Url : {choice[0]['url']}\n",
+            )
+            context.bot.sendMessage(
+                query.message.chat_id,
+                text="SECOND CHOICE: \n\n"
+                + f"Name : {choice[1]['name']}\n"
+                + f"Cuisine : {choice[1]['cuisine']}\n"
+                + f"Address : {choice[1]['address']}\n"
+                + f"Url : {choice[1]['url']}\n",
+            )
+            context.bot.sendMessage(
+                query.message.chat_id,
+                "Which of the following restaurants would you prefer?",
+                reply_markup=reply_markup,
+            )
         else:
-            answers = [[previous], []]
+            db.loc[db.user_id == update.effective_user.id, ["finished_answers"]] = True
+            PandasDB().write(db)
 
-        # fmt: off
-        import IPython ; IPython.embed()
-        # fmt: on
+            context.bot.sendMessage(
+                query.message.chat_id,
+                "Thanks for you responses, head back to your group and use the command /results to see your destination :D",
+            )
 
 
 def unknown(update: Update, context: CallbackContext):
