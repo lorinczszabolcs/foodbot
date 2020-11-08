@@ -11,9 +11,10 @@ import random as rd
 # in this case number of candidate restaurants must at least equal nC2 number of team members #
 
 # This function takes the restaurant list of ids and team numbers to generate a sample allocation scheme
-def alloc_team_sample(restnum, teamnum):
-    # creating a list of all possible combinations
-    pw_list = list(itr.combinations(restnum, 2))
+def alloc_team_sample(restlist, teamnum):
+    # creating a list of all possible combinations and changing restaurant names into indexes
+    restnum = range(len(restlist))
+    pw_list  = list(itr.combinations(restnum, 2))
     comparison_list = []
 
     for i in range(0, len(pw_list)):
