@@ -41,7 +41,7 @@ def get_aito_recommendations(users: List[Dict[str, str]]) -> Dict:
         "where": {"userID": {"$or": [*users]}},
         "recommend": "placeID",
         "goal": {"rating": 2},
-        "limit": 6,
+        "limit": 8,
     }
     res = aito_api.recommend(client, recommendation_query)
     places = res.json["hits"]
@@ -150,7 +150,7 @@ def start(update: Update, context: CallbackContext):
 
         else:
             update.message.reply_text(
-                text="Hey, welcome to FoodVote! Add me in a group and use the command /vote to start the voting! :)",
+                text="Hey, welcome to FoodVote! Add me in a group and use the command /vote to start the voting! :)\nCareful: I need permession to see the messages in your group. These messages are not stored in any way and are only used if they contain a command for me.",
             )
 
     elif grouptype == "group" or grouptype == "supergroup":
@@ -208,10 +208,15 @@ def vote(update: Update, context: CallbackContext):
 
             reply_markup = InlineKeyboardMarkup(keyboard)
 
+            name = (
+                "@" + update.effective_user.username
+                if "@" + update.effective_user.username
+                else "Anonymus"
+            )
             update.message.reply_text(
                 "Voting session started, click the button below to join the party!\n\nParticipants:"
-                + "\n- @"
-                + update.effective_user.username,
+                + "\n- "
+                + name,
                 reply_markup=reply_markup,
             )
 
@@ -286,12 +291,15 @@ def results(update: Update, context: CallbackContext):
             PandasDB().write(db)
 
         else:
-            who_is_late = db[
-                ~(db[db["voting_id"] == update.effective_chat.id]["finished_answers"])
-            ]["tg_username"].tolist()
+            # who_is_late = db[
+            #     ~(db[db["voting_id"] == update.effective_chat.id]["finished_answers"])
+            # ]["tg_username"].tolist()
+            # update.message.reply_text(
+            #     "Can't calculate the results yet! >:(\n\nThese people are still missing:\n"
+            #     + "".join([f"@{name}\n" for name in who_is_late])
+            # )
             update.message.reply_text(
-                "Can't calculate the results yet! >:(\n\nThese people are still missing:\n"
-                + "".join([f"@{name}\n" for name in who_is_late])
+                "Can't calculate the results yet! >:( Still waiting on a few votes"
             )
 
 
@@ -327,8 +335,13 @@ def button_handler(update: Update, context: CallbackContext):
                 )
             )
 
+            name = (
+                "@" + update.effective_user.username
+                if update.effective_user.username
+                else "Anonymus"
+            )
             query.edit_message_text(
-                query.message.text + "\n- @" + update.effective_user.username,
+                query.message.text + "\n-" + name,
                 reply_markup=query.message.reply_markup,
             )
 
