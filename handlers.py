@@ -41,7 +41,7 @@ def get_aito_recommendations(users: List[Dict[str, str]]) -> Dict:
         "where": {"userID": {"$or": [*users]}},
         "recommend": "placeID",
         "goal": {"rating": 2},
-        "limit": 8,
+        "limit": 6,
     }
     res = aito_api.recommend(client, recommendation_query)
     places = res.json["hits"]

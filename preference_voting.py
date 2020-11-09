@@ -14,7 +14,7 @@ import random as rd
 def alloc_team_sample(restlist, teamnum):
     # creating a list of all possible combinations and changing restaurant names into indexes
     restnum = range(len(restlist))
-    pw_list  = list(itr.combinations(restnum, 2))
+    pw_list = list(itr.combinations(restnum, 2))
     comparison_list = []
 
     for i in range(0, len(pw_list)):
@@ -34,9 +34,8 @@ def alloc_team_sample(restlist, teamnum):
 # create matrix based on above winners and losers arrays
 # the output is input for the btm method
 def voteaggregate(winners, losers, restaurant_name):
-    votesmat = np.array(
-        [[0 for i in range(len(restaurant_name))] for j in range(len(restaurant_name))]
-    )
+    votesmat = np.zeros(shape=(len(restaurant_name), len(restaurant_name)))
+
     # populate matrix
     for i in range(len(winners)):
         votesmat[winners[i]][losers[i]] = votesmat[winners[i]][losers[i]] + 1
