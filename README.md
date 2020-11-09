@@ -28,3 +28,9 @@ The main idea behind our project is to provide the recommendation power of [Aito
 # Outlook 
 
 - The same aproach can be used to integrate Aito with [slack](https://slack.com/intl/en-fi/), a popular chat application used in offices, and work teams, where such a service would be highly required.
+
+# Team members
+- [Bonomo Tommaso](https://github.com/tommasobonomo)
+- [McNaughton Shaun](https://github.com/mcnaughtonshaun)
+- [Molon Mattia](https://github.com/MattiaMolon)
+- [Lőrincz Szabolcs-Botond](https://github.com/lorinczszabolcs)
