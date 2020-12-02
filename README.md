@@ -1,6 +1,6 @@
 # FoodVote
 ## Making choosing a place to eat, fun and interactive ⚡⚡⚡
-### Submission for Junction Connected 2020 - Aito.ai challenge.
+### Winning idea for Junction Connected 2020 - Aito.ai challenge.
 
 [Link to working telegram bot.](https://t.me/foodvote_bot)
 
